@@ -10,7 +10,11 @@ public class RobotPlayer{
 	static Random rnd;
 	static RobotController rc;
 	static int[] tryDirections = {0,-1,1,-2,2};
-	static RobotType[] buildList = new RobotType[]{RobotType.SOLDIER,RobotType.GUARD, RobotType.TURRET};
+	static int stage=0;
+	static RobotType[] buildList = new RobotType[]{RobotType.SCOUT};
+	static int scoutCreationRound = -1;
+	static Direction initialDirection;
+	//RobotType.SOLDIER,, RobotType.GUARD, RobotType.TURRET
 	
 	public static void run(RobotController rcIn){
 		
@@ -29,6 +33,8 @@ public class RobotPlayer{
 					guardCode();
 				}else if(rc.getType()==RobotType.SOLDIER){
 					soldierCode();
+				}else if(rc.getType()==RobotType.SCOUT){
+					scoutCode();
 				}
 			}catch(Exception e){
 				e.printStackTrace();
@@ -36,6 +42,27 @@ public class RobotPlayer{
 
 			Clock.yield();
 		}
+	}
+
+	private static void scoutCode() throws GameActionException{
+		// TODO Auto-generated method stub
+		int temp = rc.getRoundNum();
+		if (scoutCreationRound == -1){
+			initialDirection = Direction.EAST;
+					//randomDirection();
+			scoutCreationRound = rc.getRoundNum();
+			/*RobotInfo[] info = rc.senseNearbyRobots(-1, Team.NEUTRAL);
+			System.out.println("--------------------------------------------");
+			System.out.println(rc.getID());
+			for (RobotInfo i:info){
+				System.out.println("Location: "+i.location.toString());
+				System.out.println("Type: "+i.type.toString());
+				System.out.println("Team: "+i.team.toString());
+			}
+			System.out.println("--------------------------------------------");*/
+		}	
+		tryToMove(initialDirection);
+		
 	}
 
 	private static void soldierCode() throws GameActionException {
@@ -267,6 +294,24 @@ public class RobotPlayer{
 
 	private static Direction randomDirection() {
 		return Direction.values()[(int)(rnd.nextDouble()*8)];
+	}
+	
+	private static void createBuildList(int stage){
+		if (stage==0)
+			buildList = new RobotType[]{RobotType.SCOUT};
+		else if (stage == 1)
+			buildList = new RobotType[]{RobotType.GUARD};
+		else if (stage == 2)
+			buildList = new RobotType[]{RobotType.GUARD, RobotType.SOLDIER};
+	}
+	private static void setStage(){
+		int temp = rc.getRoundNum();
+		if (temp < 10)
+			stage = 0;
+		else if (temp <30)
+			stage = 1;
+		else
+			stage=2;
 	}
 	
 }
