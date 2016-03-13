@@ -1,10 +1,6 @@
 package version1;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotInfo;
-import battlecode.common.Signal;
+import battlecode.common.*;
 
 public class TTM extends Robot{
 

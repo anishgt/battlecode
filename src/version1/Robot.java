@@ -11,6 +11,18 @@ public class Robot {
 	public static Random rnd;
 	public static int[] tryDirections = {0,-1,1,-2,2};
 	static Direction initialDirection;
+	public static int INFINITY = 10000;
+	
+	static int targetX = -1;
+	static int targetY = -1;
+	static int archonX = -1;
+	static int archonY = -1;
+	static boolean denFound = false;
+	static int MOVE_X = 182632;
+	static int MOVE_Y = 1827371;
+	static int FOUND_ARCHON_X = 756736;
+	static int FOUND_ARCHON_Y = 256253;
+	
 	
 	public static void initializeRobot(RobotController rcIn){
 		rc=rcIn;
@@ -41,7 +53,7 @@ public class Robot {
 	}
 	
 	public static MapLocation findWeakest(RobotInfo[] listOfRobots){
-		double weakestSoFar = 0;
+		double weakestSoFar = -100;
 		MapLocation weakestLocation = null;
 		for(RobotInfo r:listOfRobots){
 			double weakness = r.maxHealth-r.health;
@@ -72,6 +84,45 @@ public class Robot {
 			finishedArray[i]=attackableEnemyArray.get(i);
 		}
 		return finishedArray;
+	}
+	
+	public static void sendInstructions() throws GameActionException {
+		if (rc.getRoundNum() % 50 == 0) {
+			if (!denFound) {
+				MapLocation loc = rc.getLocation();
+				rc.broadcastMessageSignal(MOVE_X, loc.x, INFINITY);
+				rc.broadcastMessageSignal(MOVE_Y, loc.y, INFINITY);
+			} else {
+				rc.broadcastMessageSignal(MOVE_X, archonX, INFINITY);
+				rc.broadcastMessageSignal(MOVE_Y, archonY, INFINITY);
+			}
+		}	
+	}
+	
+	public static void readInstructions() throws GameActionException {
+		Signal[] signals = rc.emptySignalQueue();
+		
+		for (Signal s : signals) {
+			if (s.getTeam() != rc.getTeam()) {
+				continue;
+			}
+			
+			if (s.getMessage() == null) {
+				continue;
+			}
+			
+			int command = s.getMessage()[0];
+			if (command == MOVE_X) {
+				targetX = s.getMessage()[1];
+			} else if (command == MOVE_Y) {
+				targetY = s.getMessage()[1];
+			} else if (command == FOUND_ARCHON_X) {
+				archonX = s.getMessage()[1];
+			} else if (command == FOUND_ARCHON_Y) {
+				archonY = s.getMessage()[1];
+				denFound = true;
+			}
+		}
 	}
 	
 }
