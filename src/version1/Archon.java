@@ -6,7 +6,7 @@ public class Archon extends Robot{
 	
 	public static int ELECTION_CODE = 23874;
 	public static RobotType[] buildList = new RobotType[]{
-			RobotType.SCOUT, RobotType.SOLDIER, RobotType.GUARD, RobotType.TURRET
+			RobotType.SCOUT, RobotType.SOLDIER, RobotType.GUARD
 	};
 	public static boolean isLeader = false;
 	
@@ -32,8 +32,10 @@ public class Archon extends Robot{
 			if (enemies.length > 0) {
 				Direction away = rc.getLocation().directionTo(enemies[0].location).opposite();
 				tryToMove(away);
+				//RealTimeAStar.move(target);
 			} else {
-				tryToMove(dir);
+				//tryToMove(dir);
+				PathFinding.move(target,dir);
 			}
 		}
 		

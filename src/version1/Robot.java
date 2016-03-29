@@ -9,7 +9,7 @@ public class Robot {
 	
 	public static RobotController rc;
 	public static Random rnd;
-	public static int[] tryDirections = {0,-1,1,-2,2};
+	public static int[] tryDirections = {0,-1,1,-2,2,3,-3,4};
 	static Direction initialDirection;
 	public static int INFINITY = 10000;
 	
@@ -22,6 +22,7 @@ public class Robot {
 	static int MOVE_Y = 1827371;
 	static int FOUND_ARCHON_X = 756736;
 	static int FOUND_ARCHON_Y = 256253;
+	static ArrayList<MapLocation> pastLocations = new ArrayList<>();
 	
 	
 	public static void initializeRobot(RobotController rcIn){
@@ -32,9 +33,14 @@ public class Robot {
 	public static void tryToMove(Direction forward) throws GameActionException{
 		if(rc.isCoreReady()){
 			for(int deltaD:tryDirections){
-				Direction maybeForward = Direction.values()[(forward.ordinal()+deltaD+8)%8];
-				if(rc.canMove(maybeForward)){
-					rc.move(maybeForward);
+				Direction newDirection = Direction.values()[(forward.ordinal()+deltaD+8)%8];
+				MapLocation newLocation = rc.getLocation().add(newDirection);
+				if(rc.canMove(newDirection) && !pastLocations.contains(newLocation)){
+					pastLocations.add(rc.getLocation());
+					if(pastLocations.size()>20){
+						pastLocations.remove(0);
+					}
+					rc.move(newDirection);
 					return;
 				}
 			}
