@@ -1,4 +1,4 @@
-package version1;
+package version2;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -15,15 +15,17 @@ public class Robot {
 	
 	static int targetX = -1;
 	static int targetY = -1;
-	static int archonX;
-	static int archonY;
-	static boolean archonFound = false;
+	static int archonX = -1;
+	static int archonY = -1;
+	static boolean denFound = false;
 	static int MOVE_X = 182632;
 	static int MOVE_Y = 1827371;
 	static int FOUND_ARCHON_X = 756736;
 	static int FOUND_ARCHON_Y = 256253;
+	static int OBSTACLE_BLOCKED = 800000;
+	static int OBSTACLE_PARTIAL = 800001;
 	static ArrayList<MapLocation> pastLocations = new ArrayList<>();
-	
+	static ArrayList<MapLocation> obstacles = new ArrayList<MapLocation>();
 	
 	public static void initializeRobot(RobotController rcIn){
 		rc=rcIn;
@@ -94,7 +96,7 @@ public class Robot {
 	
 	public static void sendInstructions() throws GameActionException {
 		if (rc.getRoundNum() % 50 == 0) {
-			if (!archonFound) {
+			if (!denFound) {
 				MapLocation loc = rc.getLocation();
 				rc.broadcastMessageSignal(MOVE_X, loc.x, INFINITY);
 				rc.broadcastMessageSignal(MOVE_Y, loc.y, INFINITY);
@@ -107,7 +109,6 @@ public class Robot {
 	
 	public static void readInstructions() throws GameActionException {
 		Signal[] signals = rc.emptySignalQueue();
-		
 		for (Signal s : signals) {
 			if (s.getTeam() != rc.getTeam()) {
 				continue;
@@ -123,13 +124,11 @@ public class Robot {
 			} else if (command == MOVE_Y) {
 				targetY = s.getMessage()[1];
 			} else if (command == FOUND_ARCHON_X) {
-				int loc = s.getMessage()[1];
-				archonX = loc /1000;
-				archonY = loc % 1000;
-				targetX = archonX;
-				targetY = archonY;
-				archonFound = true;
-			}
+				archonX = s.getMessage()[1];
+			} else if (command == FOUND_ARCHON_Y) {
+				archonY = s.getMessage()[1];
+				denFound = true;
+			} 
 		}
 	}
 	

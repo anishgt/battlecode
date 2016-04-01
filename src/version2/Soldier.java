@@ -1,10 +1,11 @@
-package version1;
+package version2;
 
 import battlecode.common.*;
 
 public class Soldier extends Robot{
 	
 	public static void soldierCode() throws GameActionException {
+		readInstructions();
 		
 		RobotInfo[] nearbyEnemies = rc.senseHostileRobots(rc.getLocation(), rc.getType().attackRadiusSquared);
 		if (nearbyEnemies.length > 0) {
@@ -14,13 +15,11 @@ public class Soldier extends Robot{
 			}
 			return;
 		}
-		readInstructions();
+		
 		if (rc.isCoreReady()) {
-			if (targetX != -1 && targetY != -1){
-				MapLocation target = new MapLocation(targetX, targetY);
-				Direction dir = rc.getLocation().directionTo(target);
-				tryToMove(dir);
-			}
+			MapLocation target = new MapLocation(targetX, targetY);
+			Direction dir = rc.getLocation().directionTo(target);
+			tryToMove(dir);
 		}
 	}
 
