@@ -13,11 +13,11 @@ public class Robot {
 	static Direction initialDirection;
 	public static int INFINITY = 10000;
 	
-	static int targetX = -1;
-	static int targetY = -1;
-	static int archonX = -1;
-	static int archonY = -1;
-	static boolean denFound = false;
+	static int targetX;
+	static int targetY;
+	static int archonX;
+	static int archonY;
+	static boolean archonFound = false;
 	static int MOVE_X = 182632;
 	static int MOVE_Y = 1827371;
 	static int FOUND_ARCHON_X = 756736;
@@ -94,7 +94,7 @@ public class Robot {
 	
 	public static void sendInstructions() throws GameActionException {
 		if (rc.getRoundNum() % 50 == 0) {
-			if (!denFound) {
+			if (!archonFound) {
 				MapLocation loc = rc.getLocation();
 				rc.broadcastMessageSignal(MOVE_X, loc.x, INFINITY);
 				rc.broadcastMessageSignal(MOVE_Y, loc.y, INFINITY);
@@ -123,10 +123,12 @@ public class Robot {
 			} else if (command == MOVE_Y) {
 				targetY = s.getMessage()[1];
 			} else if (command == FOUND_ARCHON_X) {
-				archonX = s.getMessage()[1];
-			} else if (command == FOUND_ARCHON_Y) {
-				archonY = s.getMessage()[1];
-				denFound = true;
+				int loc = s.getMessage()[1];
+				archonX = loc /1000;
+				archonY = loc % 1000;
+				targetX = archonX;
+				targetY = archonY;
+				archonFound = true;
 			}
 		}
 	}

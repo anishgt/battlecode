@@ -32,10 +32,13 @@ public class Archon extends Robot{
 			if (enemies.length > 0) {
 				Direction away = rc.getLocation().directionTo(enemies[0].location).opposite();
 				tryToMove(away);
-				//RealTimeAStar.move(target);
 			} else {
-				//tryToMove(dir);
 				PathFinding.move(target,dir);
+				PathFinding.bugPathing(rc.getLocation(), target);
+			}
+			if(!(targetX==0 && targetY==0)){
+				PathFinding.move(target,dir);
+				//PathFinding.bugPathing(rc.getLocation(), target);
 			}
 		}
 		
