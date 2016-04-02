@@ -23,7 +23,13 @@ public class Robot {
 	static int FOUND_ARCHON_X = 756736;
 	static int FOUND_ARCHON_Y = 256253;
 	static ArrayList<MapLocation> pastLocations = new ArrayList<>();
-	
+	static int STATE_EXPLORE = 10000;
+	static int STATE_DEFEND = 10001;
+	static int STATE_ATTACK = 10002;
+	static int HUNT_ZOMBIE_DEN = 10003;
+	static int gameState = STATE_EXPLORE;
+	static int FOUND_NEUTRALBOTS= 756737;
+	static int CONVERTED_NEUTRALBOTS = 756738;
 	
 	public static void initializeRobot(RobotController rcIn){
 		rc=rcIn;
@@ -123,12 +129,14 @@ public class Robot {
 			} else if (command == MOVE_Y) {
 				targetY = s.getMessage()[1];
 			} else if (command == FOUND_ARCHON_X) {
-				int loc = s.getMessage()[1];
-				archonX = loc /1000;
-				archonY = loc % 1000;
-				targetX = archonX;
-				targetY = archonY;
-				archonFound = true;
+				if (rc.getRobotCount() > 15){
+					int loc = s.getMessage()[1];
+					archonX = loc /1000;
+					archonY = loc % 1000;
+					targetX = archonX;
+					targetY = archonY;
+					archonFound = true;
+				}	
 			}
 		}
 	}

@@ -15,5 +15,7 @@ public class VectorMath {
 	public static int dotProduct(MapLocation a, MapLocation b){
 		return a.x*b.x + a.y*b.y;
 	}
-	
+	public static int sqnorm(MapLocation a){
+		return a.x*a.x + a.y*a.y;
+	}
 }

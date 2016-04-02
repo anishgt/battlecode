@@ -48,6 +48,9 @@ public class PathFinding extends Robot {
 	
     public static void bugPathing(MapLocation currentLoc, MapLocation goal) throws GameActionException {
     	if(rc.isCoreReady()){
+    		if (rc.getLocation().distanceSquaredTo(goal)<=2){
+    				return;
+    		}
 	        Direction forward = currentLoc.directionTo(goal);
 	        Direction right = forward.rotateRight();
 	        Direction left = forward.rotateLeft();
