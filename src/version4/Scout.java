@@ -1,4 +1,4 @@
-package version1;
+package version4;
 
 import battlecode.common.*;
 import java.util.HashSet;
@@ -15,6 +15,20 @@ public class Scout extends Robot{
 	}
 	public static void scoutCode() throws GameActionException{
 		readInstructions();
+		if(underAttackActions()==1){
+			return;
+		}
+		if(broadcastEnemy()==1){
+			return;
+		};
+		if(resourceGatheringActions()==1){
+			return;
+		}
+		wander();
+		
+	}
+	
+	public static int wander() throws GameActionException {
 		if (rc.isCoreReady()) {
 			if (turnsLeft == 0) {
 				pickNewDirection();
@@ -24,8 +38,13 @@ public class Scout extends Robot{
 					pickNewDirection();
 				}
 				tryToMove(scoutDirection);
+				return 1;
 			}
 		}
+		return -1;
+	}
+	
+	public static int resourceGatheringActions() throws GameActionException {
 		if (gameState == STATE_EXPLORE){
 			RobotInfo[] neutralBots = rc.senseNearbyRobots(rc.getLocation(), 35, Team.NEUTRAL);
 			if (neutralBots.length > 0){
@@ -34,27 +53,46 @@ public class Scout extends Robot{
 						knownNeutralLocation.add(neutralBots[i].location);
 						rc.broadcastMessageSignal(FOUND_NEUTRALBOTS, (neutralBots[i].location.x*1000 + neutralBots[i].location.y), INFINITY);
 						//System.out.println("Scout : Found a neutral bot at: "+neutralBots[i].location);
+						return 1;
 					}
 				}
 			}
-		}
-		
+		}	
+		return -1;
+	}
+	
+	public static int broadcastEnemy() throws GameActionException {
 		RobotInfo[] enemies = rc.senseNearbyRobots(rc.getLocation(), INFINITY, rc.getTeam().opponent());
 		for (RobotInfo r : enemies) {
 			if (r.type == RobotType.ARCHON) {
 				if(!(r.location.x == archonX && r.location.y == archonY)){
 					int loc = r.location.x*1000 + r.location.y;
 					rc.broadcastMessageSignal(FOUND_ARCHON_X, loc, INFINITY);
-					break;
+					return 1;
 				}
 			}
-		}	
-		RobotInfo[] moreEnemies = rc.senseHostileRobots(rc.getLocation(), INFINITY);
-		if (moreEnemies.length > 0) {
-			Direction away = rc.getLocation().directionTo(moreEnemies[0].location).opposite();
-			tryToMove(away);
 		}
+		return -1;
 	}
+	
+	public static int underAttackActions() throws GameActionException {
+		RobotInfo[] enemies = null;
+		if (rc.isCoreReady()){
+			enemies = rc.senseHostileRobots(rc.getLocation(), 16);
+			if (enemies.length == 0)
+				return -1;
+		}
+		while(rc.isCoreReady() && enemies.length>0){
+			
+			Direction away = rc.getLocation().directionTo(enemies[0].location).opposite();
+			tryToMove(away);
+			//return 1;
+			enemies = rc.senseHostileRobots(rc.getLocation(), 16);
+		}
+		return 1;
+	}
+	
+	
 	
 	public static void readInstructions() throws GameActionException {
 		Signal[] signals = rc.emptySignalQueue();

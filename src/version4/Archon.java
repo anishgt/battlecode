@@ -1,4 +1,4 @@
-package version1;
+package version4;
 
 import battlecode.common.*;
 import java.util.HashSet;
@@ -16,13 +16,121 @@ public class Archon extends Robot{
 	public static HashSet<MapLocation> knownNeutralLocation = new HashSet<MapLocation>();
 	public static HashSet<MapLocation> processedNeutralLocation = new HashSet<MapLocation>();
 	public static void archonCode() throws GameActionException {
-		electLeader();
+
+		
+		if (isLeader){}
+			//selctGameState();
+		if(gameState==STATE_EXPLORE){
+			exploreStateActions();
+		}else if (gameState==STATE_ATTACK){
+			attackActions();
+		}
+		
+	}
+	
+	public static void selctGameState() throws GameActionException{
+		if(rc.getRobotCount()>15 && targetX!=-1 && targetY!=-1){
+			gameState=STATE_ATTACK;
+			rc.broadcastMessageSignal(CHANGE_STATE, STATE_ATTACK, INFINITY);
+		}
+	}
+	
+	public static void exploreStateActions() throws GameActionException{
+		
+		if(underAttackActions()==1){
+			System.out.println("Run Away");
+			return;
+		}
 		readInstructions();
 		if (isLeader) {
 			sendInstructions();
 		}
-		if (gameState == STATE_EXPLORE){
+		if(unitProduction()==1){
+			System.out.println("Unit Production");
+			return;
+		}
+		if(resourceGatheringActions()==1){
+			System.out.println("Resource");
+			return;
+		}
+		if(electLeader()==1){
+			System.out.println("Leader");
+			return;
+		}
+		
+		
+	}
+	
+	public static void attackStateActions() throws GameActionException{
+		
+		if(underAttackActions()==1){
+			System.out.println("Run Away");
+			return;
+		}
+		readInstructions();
+		if(attackActions()==1){
+			System.out.println("Attack");
+			return;
+		}
+		if (isLeader) {
+			sendInstructions();
+		}
+		if(unitProduction()==1){
+			System.out.println("Unit Production");
+			return;
+		}
+		if(resourceGatheringActions()==1){
+			System.out.println("Resource");
+			return;
+		}
+		if(electLeader()==1){
+			System.out.println("Leader");
+			return;
+		}
+
+		
+	}
+	
+	public static int underAttackActions() throws GameActionException {
+		RobotInfo[] enemies = null;
+		if (rc.isCoreReady()){
+			enemies = rc.senseHostileRobots(rc.getLocation(), 16);
+			if (enemies.length == 0)
+				return -1;
+		}
+		while(rc.isCoreReady() && enemies.length>0){
 			
+			Direction away = rc.getLocation().directionTo(enemies[0].location).opposite();
+			tryToMove(away);
+			//return 1;
+			enemies = rc.senseHostileRobots(rc.getLocation(), 16);
+		}
+		return 1;
+	}
+	
+	public static int unitProduction() throws GameActionException {
+		if(rc.isCoreReady()){
+			Direction randomDir = randomDirection();
+			RobotType toBuild;
+			if(rc.getRobotCount()<=5 && gameState==STATE_EXPLORE){
+				createBuildList(0);
+				toBuild = buildList[rnd.nextInt(buildList.length)];
+			}else{
+				createBuildList(1);
+				toBuild = buildList[rnd.nextInt(buildList.length)];
+			}
+			if(rc.getTeamParts()>=RobotType.SCOUT.partCost){
+				if(rc.canBuild(randomDir, toBuild)){
+					rc.build(randomDir,toBuild);
+					return 1;
+				}
+			}
+		}
+		return -1;
+	}
+	
+	public static int resourceGatheringActions() throws GameActionException {
+		if(rc.isCoreReady()){
 			RobotInfo[] neutralBots = rc.senseNearbyRobots(rc.getLocation(), 35, Team.NEUTRAL);
 			if (neutralBots.length > 0){
 				for (int i=neutralBots.length-1; i>=0; i--){
@@ -47,65 +155,46 @@ public class Archon extends Robot{
 				closestNeutral = closest;
 			}
 			
-		}
-		if(rc.isCoreReady()){
+			RobotInfo[] adjacentNeutrals = rc.senseNearbyRobots(2, Team.NEUTRAL);
+			//System.out.println("Found adjacent neutral"+adjacentNeutrals.length);
+			for (RobotInfo neutral : adjacentNeutrals) {
+				//System.out.println("Trying to activate");
+				rc.activate(neutral.location);
+				knownNeutralLocation.remove(neutral.location);
+				closestNeutral=null;
+				processedNeutralLocation.add(neutral.location);
+				rc.broadcastMessageSignal(CONVERTED_NEUTRALBOTS,neutral.location.x*1000 + neutral.location.y,INFINITY); 
+				targetX=-1;
+				targetY=-1;
+				return 1;
+			}
 			
-			Direction randomDir = randomDirection();
-			RobotType toBuild;
-			if(rc.getRobotCount()<=5 && gameState==STATE_EXPLORE){
-				createBuildList(0);
-				toBuild = buildList[rnd.nextInt(buildList.length)];
-			}else{
-				createBuildList(1);
-				toBuild = buildList[rnd.nextInt(buildList.length)];
-			}
-			if(rc.getTeamParts()>=RobotType.SCOUT.partCost){
-				if(rc.canBuild(randomDir, toBuild)){
-					rc.build(randomDir,toBuild);
-					return;
-				}
-			}
-			MapLocation target = new MapLocation(targetX, targetY);
-			Direction dir = rc.getLocation().directionTo(target);
-
-			RobotInfo[] enemies = rc.senseHostileRobots(rc.getLocation(), INFINITY);
-			if (enemies.length > 0) {
-				Direction away = rc.getLocation().directionTo(enemies[0].location).opposite();
-				tryToMove(away);
-			} 
-			if(rc.isCoreReady()){
-				RobotInfo[] adjacentNeutrals = rc.senseNearbyRobots(2, Team.NEUTRAL);
-				//System.out.println("Found adjacent neutral"+adjacentNeutrals.length);
-				for (RobotInfo neutral : adjacentNeutrals) {
-					//System.out.println("Trying to activate");
-					rc.activate(neutral.location);
-					knownNeutralLocation.remove(neutral.location);
-					closestNeutral=null;
-					processedNeutralLocation.add(neutral.location);
-					rc.broadcastMessageSignal(CONVERTED_NEUTRALBOTS,neutral.location.x*1000 + neutral.location.y,INFINITY); 
-					
-				}
-			}
 			if (closestNeutral != null){
 				PathFinding.bugPathing(rc.getLocation(), closestNeutral);
 				//PathFinding.move(target,dir);
 			}
-
-			if(!(targetX==-1 && targetY==-1)){
+		}
+		return -1;
+	}
+	
+	public static int attackActions() throws GameActionException {
+		if(rc.isCoreReady()){
+			MapLocation target = new MapLocation(targetX, targetY);
+			if(targetX!=-1 && targetY!=-1){
 				//PathFinding.move(target,dir);
 				//System.out.println("Moving towards target" + targetX + targetY);
 				PathFinding.bugPathing(rc.getLocation(), target);
 				//PathFinding.move(target,dir);
 				
 				//PathFinding.bugPathing(rc.getLocation(), target);
+				return 1;
 			}
-
 		}
-		
+		return -1;
 	}
 	
-	public static void electLeader() throws GameActionException {
-		if (rc.getRoundNum() % 100 == 0 && rc.getType() == RobotType.ARCHON) {
+	public static int electLeader() throws GameActionException {
+		if (rc.getRoundNum() % 300 == 0 && rc.getType() == RobotType.ARCHON) {
 			rc.broadcastMessageSignal(ELECTION_CODE, 0, INFINITY);
 			Signal[] receivedSignal = rc.emptySignalQueue();
 			int numArchons = 0;
@@ -117,13 +206,16 @@ public class Archon extends Robot{
 			if (numArchons == 0) {
 				// If you haven't received anything yet, then you're the leader.
 				isLeader = true;
+				return 1;
 			} else {
 				isLeader = false;
+				return 1;
 			}
 		}
-		
-		
+		return -1;
 	}
+	
+	
 	public static void readInstructions() throws GameActionException {
 		Signal[] signals = rc.emptySignalQueue();
 		
@@ -174,7 +266,7 @@ public class Archon extends Robot{
 		if (stage==0)
 			buildList = new RobotType[]{RobotType.SCOUT};
 		else if (stage == 1)
-			buildList = new RobotType[]{RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.SOLDIER,RobotType.SOLDIER};
+			buildList = new RobotType[]{RobotType.SCOUT,RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.SOLDIER,RobotType.SOLDIER};
 		else if (stage == 2)
 			buildList = new RobotType[]{RobotType.SCOUT, RobotType.GUARD, RobotType.SOLDIER,RobotType.GUARD, RobotType.SOLDIER,RobotType.GUARD, RobotType.SOLDIER, RobotType.GUARD, RobotType.SOLDIER, RobotType.GUARD, RobotType.SOLDIER, RobotType.GUARD, RobotType.SOLDIER};
 	}
