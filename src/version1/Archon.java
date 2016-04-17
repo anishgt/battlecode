@@ -50,7 +50,7 @@ public class Archon extends Robot{
 		}
 		if(rc.isCoreReady()){
 			
-			Direction randomDir = randomDirection();
+			/*Direction randomDir = randomDirection();
 			RobotType toBuild;
 			if(rc.getRobotCount()<=5 && gameState==STATE_EXPLORE){
 				createBuildList(0);
@@ -64,7 +64,7 @@ public class Archon extends Robot{
 					rc.build(randomDir,toBuild);
 					return;
 				}
-			}
+			}*/
 			MapLocation target = new MapLocation(targetX, targetY);
 			Direction dir = rc.getLocation().directionTo(target);
 
@@ -91,7 +91,7 @@ public class Archon extends Robot{
 				//PathFinding.move(target,dir);
 			}
 
-			if(!(targetX==-1 && targetY==-1)){
+			if((targetX!=-1 && targetY!=-1)){
 				//PathFinding.move(target,dir);
 				//System.out.println("Moving towards target" + targetX + targetY);
 				PathFinding.bugPathing(rc.getLocation(), target);

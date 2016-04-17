@@ -146,6 +146,7 @@ public class Archon extends Robot{
 	
 	public static int resourceGatheringActions() throws GameActionException {
 		if(rc.isCoreReady()){
+			partsGatheringActions();
 			RobotInfo[] neutralBots = rc.senseNearbyRobots(rc.getLocation(), 35, Team.NEUTRAL);
 			if (neutralBots.length > 0){
 				for (int i=neutralBots.length-1; i>=0; i--){
@@ -224,6 +225,7 @@ public class Archon extends Robot{
 			if (bestPartLoc != null){
 				PathFinding.bugPathing(rc.getLocation(), closestParts);
 				//PathFinding.move(target,dir);
+				return 1;
 			}
 		}
 		return -1;

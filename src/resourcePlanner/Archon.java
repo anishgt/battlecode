@@ -1,6 +1,8 @@
-package version4;
+package resourcePlanner;
 
 import battlecode.common.*;
+import final_25.FastMath;
+
 import java.util.HashSet;
 
 import javax.swing.plaf.synth.SynthSeparatorUI;
@@ -12,9 +14,12 @@ public class Archon extends Robot{
 			RobotType.SCOUT, RobotType.SOLDIER, RobotType.GUARD
 	}; 
 	public static MapLocation closestNeutral = null;
+	public static MapLocation closestParts = null;
 	public static boolean isLeader = false;
 	public static HashSet<MapLocation> knownNeutralLocation = new HashSet<MapLocation>();
+	public static HashSet<MapLocation> knownPartsLocation = new HashSet<MapLocation>();
 	public static HashSet<MapLocation> processedNeutralLocation = new HashSet<MapLocation>();
+	public static HashSet<MapLocation> collectedPartsLocation = new HashSet<MapLocation>();
 	public static void archonCode() throws GameActionException {
 
 		
@@ -29,7 +34,7 @@ public class Archon extends Robot{
 	}
 	
 	public static void selctGameState() throws GameActionException{
-		if(rc.getRobotCount()>15 && targetX!=-1 && targetY!=-1){
+		if(rc.getRobotCount()>25 && targetX!=-1 && targetY!=-1){
 			gameState=STATE_ATTACK;
 			rc.broadcastMessageSignal(CHANGE_STATE, STATE_ATTACK, INFINITY);
 		}
@@ -49,6 +54,10 @@ public class Archon extends Robot{
 			//System.out.println("Unit Production");
 			return;
 		}
+		if(partsGatheringActions()==1){
+			//System.out.println("Parts");
+			return;
+		}
 		if(resourceGatheringActions()==1){
 			//System.out.println("Resource");
 			return;
@@ -64,27 +73,27 @@ public class Archon extends Robot{
 	public static void attackStateActions() throws GameActionException{
 		
 		if(underAttackActions()==1){
-			//System.out.println("Run Away");
+			System.out.println("Run Away");
 			return;
 		}
 		readInstructions();
 		if(attackActions()==1){
-			//System.out.println("Attack");
+			System.out.println("Attack");
 			return;
 		}
 		if (isLeader) {
 			sendInstructions();
 		}
 		if(unitProduction()==1){
-			//System.out.println("Unit Production");
+			System.out.println("Unit Production");
 			return;
 		}
 		if(resourceGatheringActions()==1){
-			//System.out.println("Resource");
+			System.out.println("Resource");
 			return;
 		}
 		if(electLeader()==1){
-			//System.out.println("Leader");
+			System.out.println("Leader");
 			return;
 		}
 
@@ -95,13 +104,19 @@ public class Archon extends Robot{
 		RobotInfo[] enemies = null;
 		if (rc.isCoreReady()){
 			enemies = rc.senseHostileRobots(rc.getLocation(), 16);
-			if (enemies.length == 0)
+			if ((enemies.length == 0)||(enemies.length==1 && enemies[0].type==RobotType.SCOUT))
 				return -1;
 		}
 		while(rc.isCoreReady() && enemies.length>0){
+			int i=0;
+			for(i=0; i<enemies.length; i++){
+				if (enemies[i].type==RobotType.SCOUT)
+					continue;
+				Direction away = rc.getLocation().directionTo(enemies[i].location).opposite();
+				tryToMove(away);
+				break;
+			}
 			
-			Direction away = rc.getLocation().directionTo(enemies[0].location).opposite();
-			tryToMove(away);
 			//return 1;
 			enemies = rc.senseHostileRobots(rc.getLocation(), 16);
 		}
@@ -112,14 +127,14 @@ public class Archon extends Robot{
 		if(rc.isCoreReady()){
 			Direction randomDir = randomDirection();
 			RobotType toBuild;
-			if(rc.getRobotCount()<=5 && gameState==STATE_EXPLORE){
+			if(rc.getRoundNum()<=5 && gameState==STATE_EXPLORE){
 				createBuildList(0);
 				toBuild = buildList[rnd.nextInt(buildList.length)];
 			}else{
 				createBuildList(1);
 				toBuild = buildList[rnd.nextInt(buildList.length)];
 			}
-			if(rc.getTeamParts()>=RobotType.SCOUT.partCost){
+			if(rc.getTeamParts()>=RobotType.GUARD.partCost){
 				if(rc.canBuild(randomDir, toBuild)){
 					rc.build(randomDir,toBuild);
 					return 1;
@@ -131,6 +146,7 @@ public class Archon extends Robot{
 	
 	public static int resourceGatheringActions() throws GameActionException {
 		if(rc.isCoreReady()){
+			partsGatheringActions();
 			RobotInfo[] neutralBots = rc.senseNearbyRobots(rc.getLocation(), 35, Team.NEUTRAL);
 			if (neutralBots.length > 0){
 				for (int i=neutralBots.length-1; i>=0; i--){
@@ -177,6 +193,46 @@ public class Archon extends Robot{
 		return -1;
 	}
 	
+	public static int partsGatheringActions() throws GameActionException {
+		if(rc.isCoreReady()){
+			MapLocation[] partLocs = rc.sensePartLocations(RobotType.ARCHON.sensorRadiusSquared);
+			if (partLocs.length > 0){
+				for (int i=partLocs.length-1; i>=0; i--){
+					if (!knownPartsLocation.contains(partLocs[i])){
+						knownPartsLocation.add(partLocs[i]);
+						//System.out.println("Archon : Found a neutral bot at: "+neutralBots[i].location);
+					}
+				}
+			}
+			
+			MapLocation bestPartLoc = null;
+			if (partLocs.length > 0) {
+				double bestScore = Double.NEGATIVE_INFINITY;
+				for (MapLocation partLoc : knownPartsLocation) {
+					double numParts = rc.senseParts(partLoc);
+					double score = numParts - 20 * Math.sqrt(rc.getLocation().distanceSquaredTo(partLoc));
+					/*if (rc.senseRobotAtLocation(partLoc) != null) {
+						score -= 100;
+					}*/
+					if (score > bestScore) {
+						bestScore = score;
+						bestPartLoc = partLoc;
+					}
+				}	
+				closestParts = bestPartLoc;
+			}
+			
+			if (bestPartLoc != null){
+				Direction dir = rc.getLocation().directionTo(closestParts);
+				tryToMove(dir);
+				//PathFinding.bugPathing(rc.getLocation(), closestParts);
+				//PathFinding.move(target,dir);
+				return 1;
+			}
+		}
+		return -1;
+	}
+	
 	public static int attackActions() throws GameActionException {
 		if(rc.isCoreReady()){
 			MapLocation target = new MapLocation(targetX, targetY);
@@ -191,6 +247,28 @@ public class Archon extends Robot{
 			}
 		}
 		return -1;
+	}
+	
+	public static void collectParts() throws GameActionException {
+		if(rc.isCoreReady()){
+			MapLocation[] partLocs = rc.sensePartLocations(RobotType.ARCHON.sensorRadiusSquared);
+			MapLocation bestPartLoc = null;
+			if (partLocs.length > 0) {
+				double bestScore = Double.NEGATIVE_INFINITY;
+				for (MapLocation partLoc : partLocs) {
+					double numParts = rc.senseParts(partLoc);
+					double score = numParts - 20 * Math.sqrt(rc.getLocation().distanceSquaredTo(partLoc));
+					if (rc.senseRobotAtLocation(partLoc) != null) {
+						score -= 100;
+					}
+					if (score > bestScore) {
+						bestScore = score;
+						bestPartLoc = partLoc;
+					}
+				}	
+			}	
+			PathFinding.bugPathing(rc.getLocation(), bestPartLoc);
+		}
 	}
 	
 	public static int electLeader() throws GameActionException {
@@ -258,6 +336,19 @@ public class Archon extends Robot{
 					//System.out.println("Archon : Received from scout. Found a neutral bot at: "+location);
 				}
 				
+			}else if (command == FOUND_PARTS){
+				int loc = s.getMessage()[1];
+				MapLocation location = new MapLocation(loc /1000,loc % 1000);
+				if(!collectedPartsLocation.contains(location)){
+					knownPartsLocation.add(location);
+					System.out.println("Archon rec");
+				}
+			}else if (command == COLLECTED_PARTS){
+				int loc = s.getMessage()[1];
+				MapLocation location = new MapLocation(loc /1000,loc % 1000);
+				if(!collectedPartsLocation.contains(location)){
+					knownPartsLocation.add(location);
+				}
 			}
 		}
 	}
@@ -266,8 +357,10 @@ public class Archon extends Robot{
 		if (stage==0)
 			buildList = new RobotType[]{RobotType.SCOUT};
 		else if (stage == 1)
-			buildList = new RobotType[]{RobotType.SCOUT,RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.SOLDIER,RobotType.SOLDIER};
+			buildList = new RobotType[]{RobotType.SCOUT,RobotType.SOLDIER,RobotType.SOLDIER,RobotType.SOLDIER,RobotType.SOLDIER,RobotType.SOLDIER,RobotType.SOLDIER,RobotType.SOLDIER,RobotType.SOLDIER};
 		else if (stage == 2)
+			buildList = new RobotType[]{RobotType.SCOUT,RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.GUARD,RobotType.SOLDIER,RobotType.SOLDIER,RobotType.SOLDIER,RobotType.SOLDIER};
+		else if (stage == 3)
 			buildList = new RobotType[]{RobotType.SCOUT, RobotType.GUARD, RobotType.SOLDIER,RobotType.GUARD, RobotType.SOLDIER,RobotType.GUARD, RobotType.SOLDIER, RobotType.GUARD, RobotType.SOLDIER, RobotType.GUARD, RobotType.SOLDIER, RobotType.GUARD, RobotType.SOLDIER};
 	}
 

@@ -1,4 +1,4 @@
-package version3;
+package resourcePlanner;
 
 import battlecode.common.*;
 
@@ -8,7 +8,7 @@ public class Soldier extends Robot{
 		RobotInfo[] nearbyEnemies = rc.senseHostileRobots(rc.getLocation(), rc.getType().attackRadiusSquared);
 		int count=0;
 		while(nearbyEnemies.length>0 && count<40){
-			System.out.println(rc.getRoundNum());
+			//System.out.println(rc.getRoundNum());
 			
 			
 			if (rc.isWeaponReady()) {
