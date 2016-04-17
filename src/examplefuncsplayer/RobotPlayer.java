@@ -32,7 +32,7 @@ public class RobotPlayer {
                 e.printStackTrace();
             }
 
-            while (true) {
+            while (true) {/*
                 // This is a loop to prevent the run() method from returning. Because of the Clock.yield()
                 // at the end of it, the loop will iterate once per game round.
                 try {
@@ -88,7 +88,7 @@ public class RobotPlayer {
                     System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
-            }
+            */}
         } else if (rc.getType() != RobotType.TURRET) {
             try {
                 // Any code here gets executed exactly once at the beginning of the game.

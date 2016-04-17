@@ -34,7 +34,7 @@ public class Archon extends Robot{
 	}
 	
 	public static void selctGameState() throws GameActionException{
-		if(rc.getRobotCount()>15 && targetX!=-1 && targetY!=-1){
+		if(rc.getRobotCount()>25 && targetX!=-1 && targetY!=-1){
 			gameState=STATE_ATTACK;
 			rc.broadcastMessageSignal(CHANGE_STATE, STATE_ATTACK, INFINITY);
 		}
